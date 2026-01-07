@@ -1,0 +1,64 @@
+# ===========================================
+# TERO - Auto Deploy
+# ===========================================
+# Deploys to VPS automatically when pushing to main branch
+#
+# Required secrets (configure in GitHub repo settings):
+# - VPS_HOST: Server IP or hostname
+# - VPS_USER: SSH username
+# - VPS_SSH_KEY: SSH private key
+#
+
+name: Deploy Tero
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'components/**'
+      - 'lib/**'
+      - 'public/**'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            echo "=== Deploying Tero ==="
+
+            cd /home/smartflex/tero
+
+            # Pull latest changes
+            git pull origin main
+
+            # Install dependencies and build
+            npm ci --quiet
+            npm run build
+
+            # Restart ONLY the tero service
+            sudo systemctl restart tero
+
+            # Verify service is running
+            sleep 3
+            if systemctl is-active --quiet tero; then
+              echo "✅ tero deployed successfully at $(date)"
+            else
+              echo "❌ Service failed to start"
+              sudo journalctl -u tero -n 20
+              exit 1
+            fi
