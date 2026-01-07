@@ -2,15 +2,20 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   DollarSign,
   ChefHat,
   BookOpen,
   LayoutDashboard,
   Menu,
-  X
+  X,
+  LogOut,
+  Users,
+  User,
+  ChevronDown,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -19,9 +24,37 @@ const navigation = [
   { name: 'Carta', href: '/carta', icon: BookOpen },
 ];
 
+const adminNavigation = [
+  { name: 'Usuarios', href: '/usuarios', icon: Users },
+];
+
 export default function Header() {
   const pathname = usePathname();
+  const { user, logout, isAdmin } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close user menu on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  if (!user) return null;
+
+  const allNav = isAdmin ? [...navigation, ...adminNavigation] : navigation;
+
+  const roleColors = {
+    admin: 'bg-purple-100 text-purple-700',
+    chef: 'bg-orange-100 text-orange-700',
+    viewer: 'bg-gray-100 text-gray-700',
+  };
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -39,7 +72,7 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden sm:flex sm:items-center sm:gap-1">
-            {navigation.map((item) => {
+            {allNav.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
               const Icon = item.icon;
               return (
@@ -61,22 +94,74 @@ export default function Header() {
             })}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="flex items-center sm:hidden">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+          {/* User Menu */}
+          <div className="flex items-center gap-4">
+            {/* Desktop User Menu */}
+            <div className="hidden sm:block relative" ref={userMenuRef}>
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-gray-600" />
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-medium text-gray-900">
+                    {user.nombre || user.username}
+                  </div>
+                  <div className={`text-xs px-1.5 py-0.5 rounded ${roleColors[user.role]}`}>
+                    {user.role}
+                  </div>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {userMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      logout();
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Cerrar Sesión
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile menu button */}
+            <div className="flex items-center sm:hidden">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+              >
+                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="sm:hidden pb-4">
+            {/* User info */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 mb-2">
+              <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                <User className="w-5 h-5 text-gray-600" />
+              </div>
+              <div>
+                <div className="font-medium text-gray-900">{user.nombre || user.username}</div>
+                <div className={`text-xs px-1.5 py-0.5 rounded inline-block ${roleColors[user.role]}`}>
+                  {user.role}
+                </div>
+              </div>
+            </div>
+
             <div className="flex flex-col gap-1">
-              {navigation.map((item) => {
+              {allNav.map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
                 const Icon = item.icon;
                 return (
@@ -97,6 +182,17 @@ export default function Header() {
                   </Link>
                 );
               })}
+
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  logout();
+                }}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 mt-2 border-t border-gray-200 pt-4"
+              >
+                <LogOut className="w-5 h-5" />
+                Cerrar Sesión
+              </button>
             </div>
           </div>
         )}

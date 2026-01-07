@@ -108,6 +108,19 @@ export interface PlatoCarta {
   precio_sugerido?: number;
 }
 
+// Usuarios
+export interface User {
+  id: number;
+  username: string;
+  email: string | null;
+  nombre: string | null;
+  role: 'admin' | 'chef' | 'viewer';
+  activo: boolean;
+  last_login: Date | null;
+  created_at: Date;
+  updated_at?: Date;
+}
+
 // API Response types
 export interface ApiResponse<T> {
   success: boolean;

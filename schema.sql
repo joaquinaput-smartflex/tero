@@ -136,6 +136,26 @@ CREATE TABLE IF NOT EXISTS platos_carta (
 ) ENGINE=InnoDB;
 
 -- =====================================================
+-- USUARIOS Y AUTENTICACIÓN
+-- =====================================================
+
+-- Usuarios del sistema
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    nombre VARCHAR(100),
+    role ENUM('admin', 'chef', 'viewer') DEFAULT 'viewer',
+    activo BOOLEAN DEFAULT TRUE,
+    last_login TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_users_username (username),
+    INDEX idx_users_role (role)
+) ENGINE=InnoDB;
+
+-- =====================================================
 -- VISTAS ÚTILES
 -- =====================================================
 
