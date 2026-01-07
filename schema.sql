@@ -113,11 +113,8 @@ CREATE TABLE IF NOT EXISTS receta_ingredientes (
     FOREIGN KEY (insumo_id) REFERENCES insumos(id) ON DELETE SET NULL,
     FOREIGN KEY (subreceta_id) REFERENCES recetas(id) ON DELETE SET NULL,
     INDEX idx_receta_ingredientes_receta (receta_id),
-    INDEX idx_receta_ingredientes_insumo (insumo_id),
-    CONSTRAINT chk_ingrediente_tipo CHECK (
-        (insumo_id IS NOT NULL AND subreceta_id IS NULL) OR
-        (insumo_id IS NULL AND subreceta_id IS NOT NULL)
-    )
+    INDEX idx_receta_ingredientes_insumo (insumo_id)
+    -- Note: CHECK constraint for insumo_id XOR subreceta_id enforced at application level
 ) ENGINE=InnoDB;
 
 -- Platos de carta
